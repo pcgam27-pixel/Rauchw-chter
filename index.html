@@ -271,6 +271,16 @@
     transform:translateX(19px);
     background:var(--teal);
   }
+  #alarmIntervalSelect{
+    flex-shrink:0;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--surface-2);
+    color:var(--text);
+    font-size:13px;
+    font-weight:600;
+  }
   .danger-btn{
     margin:18px 0 4px;
     width:100%;
@@ -428,7 +438,31 @@
         </div>
         <button class="switch" id="testSwitch"></button>
       </div>
+      <div class="setting-row">
+        <div>
+          <div class="t">Automatisch Wecker setzen</div>
+          <div class="d">Bei jedem Eintrag wird sofort ein neuer Wecker in deiner Wecker-App angelegt — unabhängig davon, ob Glimm offen ist. Funktioniert nur auf Android/Chrome.</div>
+        </div>
+        <button class="switch" id="autoAlarmSwitch"></button>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="t">Erinnerungsabstand</div>
+          <div class="d">Zeit bis zum jeweils nächsten automatischen Wecker</div>
+        </div>
+        <select id="alarmIntervalSelect">
+          <option value="20">20 Min</option>
+          <option value="30">30 Min</option>
+          <option value="45">45 Min</option>
+          <option value="60">60 Min</option>
+          <option value="90">90 Min</option>
+          <option value="120">120 Min</option>
+        </select>
+      </div>
     </div>
+    <p class="note">
+      Hinweis: Ob der Wecker direkt ohne Bestätigung angelegt wird oder du kurz in der Wecker-App auf „Speichern" tippen musst, hängt von der jeweiligen App ab. Mit der vorinstallierten Google-Uhr klappt es i. d. R. ohne Extra-Tap. Abgelaufene Wecker werden von den meisten Apps nicht automatisch gelöscht, sondern bleiben (deaktiviert) in der Liste stehen.
+    </p>
     <p class="note">
       Test läuft nur, solange Chrome/Glimm im Vorder- oder Hintergrund-Tab offen ist — nicht bei komplett geschlossener App. Das testet die Benachrichtigungen selbst, nicht das Verhalten bei voll geschlossener App.
     </p>
@@ -466,8 +500,8 @@ function saveEntries(list){
   localStorage.setItem(STORE_KEY, JSON.stringify(list));
 }
 function loadSettings(){
-  try{ return Object.assign({notif:false, silent:true, testNotif:false}, JSON.parse(localStorage.getItem(SETTINGS_KEY))); }
-  catch(e){ return {notif:false, silent:true, testNotif:false}; }
+  try{ return Object.assign({notif:false, silent:true, testNotif:false, autoAlarm:false, alarmInterval:60}, JSON.parse(localStorage.getItem(SETTINGS_KEY))); }
+  catch(e){ return {notif:false, silent:true, testNotif:false, autoAlarm:false, alarmInterval:60}; }
 }
 function saveSettings(s){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
@@ -492,6 +526,26 @@ function fmtTime(ts){
 }
 function countBetween(from,to){
   return entries.filter(e=>e.t>=from.getTime() && e.t<to.getTime()).length;
+}
+
+/* ---------------- Android-Wecker per Intent ---------------- */
+/* Nutzt Androids eingebaute ACTION_SET_ALARM-Schnittstelle, die jede
+   Wecker-App im System unterstützen kann. Funktioniert nur in Chrome
+   auf Android (intent:// URIs), nicht auf iOS oder Desktop.
+   Muss synchron in einem echten Tap-Handler aufgerufen werden, sonst
+   blockiert der Browser die Navigation. */
+function setAndroidAlarm(minutesFromNow){
+  const target = new Date(Date.now() + minutesFromNow*60000);
+  const hour = target.getHours();
+  const minute = target.getMinutes();
+  const msg = encodeURIComponent('Glimm Erinnerung');
+  const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;`
+    + `i.android.intent.extra.alarm.HOUR=${hour};`
+    + `i.android.intent.extra.alarm.MINUTES=${minute};`
+    + `S.android.intent.extra.alarm.MESSAGE=${msg};`
+    + `B.android.intent.extra.alarm.SKIP_UI=true;`
+    + `end`;
+  try{ window.location.href = intentUrl; }catch(e){}
 }
 
 /* ---------------- Render: Day ---------------- */
@@ -615,6 +669,9 @@ document.getElementById('logBtn').addEventListener('click', ()=>{
   saveEntries(entries);
   renderAll();
   if(navigator.vibrate) navigator.vibrate(30);
+  if(settings.autoAlarm){
+    setAndroidAlarm(settings.alarmInterval);
+  }
 });
 document.getElementById('undoBtn').addEventListener('click', ()=>{
   if(!entries.length) return;
@@ -631,8 +688,20 @@ function paintSwitches(){
   document.getElementById('notifSwitch').classList.toggle('on', settings.notif);
   document.getElementById('silentSwitch').classList.toggle('on', settings.silent);
   document.getElementById('testSwitch').classList.toggle('on', settings.testNotif);
+  document.getElementById('autoAlarmSwitch').classList.toggle('on', settings.autoAlarm);
+  document.getElementById('alarmIntervalSelect').value = String(settings.alarmInterval);
 }
 paintSwitches();
+
+document.getElementById('autoAlarmSwitch').addEventListener('click', ()=>{
+  settings.autoAlarm = !settings.autoAlarm;
+  saveSettings(settings);
+  paintSwitches();
+});
+document.getElementById('alarmIntervalSelect').addEventListener('change', (e)=>{
+  settings.alarmInterval = parseInt(e.target.value, 10) || 60;
+  saveSettings(settings);
+});
 
 document.getElementById('notifSwitch').addEventListener('click', async ()=>{
   if(!settings.notif){
