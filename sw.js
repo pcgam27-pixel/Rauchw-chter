@@ -36,21 +36,3 @@ self.addEventListener('fetch', e => {
     })
   );
 });
-
-/* Best-effort background wake-up. Chrome/Android only, for installed PWAs
-   with enough engagement. Not a guaranteed clock — the OS frequently
-   batches or skips ticks to save battery. Treat as a bonus on top of
-   the in-app hourly check, not a replacement for it. */
-self.addEventListener('periodicsync', e => {
-  if (e.tag === 'glimm-hourly-reminder') {
-    e.waitUntil(
-      self.registration.showNotification('Glimm', {
-        body: 'Zeit zum Eintragen — wie viele bisher?',
-        icon: './icon-192.png',
-        badge: './icon-192.png',
-        tag: 'glimm-reminder',
-        silent: true
-      })
-    );
-  }
-});
