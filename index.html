@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#14120F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Glimm</title>
+
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<style>
+  :root{
+    --bg:#14120F;
+    --surface:#1F1C18;
+    --surface-2:#262220;
+    --line:#322D28;
+    --text:#EDE8E0;
+    --muted:#8A8378;
+    --ember:#FF6B35;
+    --ember-dim:#7a3d22;
+    --teal:#4A9B8E;
+    --teal-dim:#2c4a45;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    overscroll-behavior:none;
+    user-select:none;
+  }
+  body{
+    display:flex;flex-direction:column;
+    min-height:100vh;
+    min-height:100dvh;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    padding:28px 24px 18px;
+    text-align:center;
+    position:relative;
+  }
+  .wordmark{
+    font-size:15px;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .wordmark span{color:var(--ember);}
+
+  /* ---------- Install banner ---------- */
+  #installBar{
+    display:none;
+    margin:14px 20px 0;
+    padding:13px 16px;
+    border-radius:16px;
+    background:var(--surface-2);
+    border:1px solid var(--ember-dim);
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  #installBar.show{display:flex;}
+  #installBar .txt{font-size:13px;line-height:1.4;}
+  #installBar .txt b{display:block;font-size:14px;}
+  #installBtn{
+    flex-shrink:0;
+    padding:10px 16px;
+    border-radius:12px;
+    border:none;
+    background:var(--ember);
+    color:#1a0e08;
+    font-weight:800;
+    font-size:13px;
+  }
+  #installClose{
+    background:none;border:none;color:var(--muted);font-size:18px;padding:0 4px;flex-shrink:0;
+  }
+
+  /* ---------- Tabs ---------- */
+  nav.tabs{
+    display:flex;
+    gap:8px;
+    padding:16px 20px 16px;
+  }
+  nav.tabs button{
+    flex:1;
+    padding:11px 0;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--muted);
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:0.02em;
+  }
+  nav.tabs button.active{
+    background:var(--surface-2);
+    border-color:var(--ember-dim);
+    color:var(--text);
+  }
+
+  main{
+    flex:1;
+    padding:0 20px 140px;
+    overflow-y:auto;
+  }
+
+  /* ---------- Big number ---------- */
+  .hero{
+    background:radial-gradient(circle at 50% 0%, rgba(255,107,53,0.10), transparent 65%), var(--surface);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:30px 20px 26px;
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .hero .count{
+    font-size:64px;
+    font-weight:700;
+    line-height:1;
+    letter-spacing:-0.02em;
+  }
+  .hero .label{
+    margin-top:8px;
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:0.04em;
+  }
+  .hero .sub{
+    margin-top:14px;
+    display:flex;
+    justify-content:center;
+    gap:22px;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .hero .sub b{
+    display:block;
+    color:var(--text);
+    font-size:16px;
+    font-weight:700;
+    margin-top:2px;
+  }
+
+  /* ---------- Bars ---------- */
+  .chart{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:18px 16px 14px;
+    margin-bottom:18px;
+  }
+  .chart h3{
+    margin:0 0 14px;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .bars{
+    display:flex;
+    align-items:flex-end;
+    gap:6px;
+    height:120px;
+  }
+  .bar-col{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    height:100%;
+    gap:6px;
+  }
+  .bar{
+    width:100%;
+    max-width:26px;
+    border-radius:6px 6px 3px 3px;
+    background:linear-gradient(180deg, var(--ember), var(--ember-dim));
+    min-height:3px;
+    transition:height .35s ease;
+  }
+  .bar.today{
+    background:linear-gradient(180deg, var(--teal), var(--teal-dim));
+  }
+  .bar-tick{
+    font-size:10px;
+    color:var(--muted);
+  }
+
+  /* ---------- Day log list ---------- */
+  .loglist{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:20px;
+    overflow:hidden;
+  }
+  .loglist h3{
+    margin:0;
+    padding:16px 16px 0;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .entry{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:13px 16px;
+    border-top:1px solid var(--line);
+    font-size:14px;
+  }
+  .entry .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--ember);
+    margin-right:10px;
+    flex-shrink:0;
+  }
+  .entry .row{display:flex;align-items:center;}
+  .entry .time{color:var(--muted);font-size:13px;}
+  .empty{
+    padding:30px 16px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  /* ---------- Settings ---------- */
+  .setting-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px;
+    border-top:1px solid var(--line);
+  }
+  .setting-row:first-child{border-top:none;}
+  .setting-row .t{font-size:14px;font-weight:600;}
+  .setting-row .d{font-size:12px;color:var(--muted);margin-top:2px;max-width:220px;}
+  .switch{
+    width:46px;height:27px;border-radius:999px;
+    background:var(--line);
+    position:relative;
+    flex-shrink:0;
+    border:none;
+  }
+  .switch.on{background:var(--teal-dim);}
+  .switch::after{
+    content:'';
+    position:absolute;
+    top:3px;left:3px;
+    width:21px;height:21px;
+    border-radius:50%;
+    background:#cfc9c0;
+    transition:transform .2s ease, background .2s ease;
+  }
+  .switch.on::after{
+    transform:translateX(19px);
+    background:var(--teal);
+  }
+  .danger-btn{
+    margin:18px 0 4px;
+    width:100%;
+    padding:14px;
+    border-radius:14px;
+    background:transparent;
+    border:1px solid var(--line);
+    color:#c9786a;
+    font-size:14px;
+    font-weight:600;
+  }
+  .note{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.6;
+    padding:4px 4px 0;
+  }
+
+  /* ---------- Tap button ---------- */
+  .tapzone{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    padding:0 20px calc(20px + env(safe-area-inset-bottom));
+    display:flex;
+    justify-content:center;
+    background:linear-gradient(180deg, transparent, var(--bg) 35%);
+    pointer-events:none;
+  }
+  .tapzone .inner{
+    pointer-events:auto;
+    width:100%;
+    max-width:420px;
+    display:flex;
+    gap:10px;
+  }
+  #logBtn{
+    flex:1;
+    padding:18px 0;
+    border-radius:18px;
+    border:none;
+    background:linear-gradient(180deg, var(--ember), #d8501f);
+    color:#1a0e08;
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:0.01em;
+    box-shadow:0 8px 24px rgba(255,107,53,0.28);
+  }
+  #logBtn:active{transform:scale(0.97);}
+  #undoBtn{
+    width:58px;
+    border-radius:18px;
+    border:1px solid var(--line);
+    background:var(--surface-2);
+    color:var(--muted);
+    font-size:13px;
+    font-weight:700;
+  }
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  ::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark">Gl<span>i</span>mm</div>
+</header>
+
+<div id="installBar">
+  <div class="txt"><b>Als App installieren</b>Läuft danach offline vom Homescreen</div>
+  <button id="installBtn">Installieren</button>
+  <button id="installClose">✕</button>
+</div>
+
+<nav class="tabs">
+  <button data-view="day" class="active">Tag</button>
+  <button data-view="week">Woche</button>
+  <button data-view="month">Monat</button>
+  <button data-view="settings">⚙</button>
+</nav>
+
+<main>
+
+  <!-- DAY VIEW -->
+  <section class="view active" id="view-day">
+    <div class="hero">
+      <div class="count" id="dayCount">0</div>
+      <div class="label">heute geraucht</div>
+      <div class="sub">
+        <div>Letzte<b id="lastTime">–</b></div>
+        <div>Ø 7 Tage<b id="avg7">0</b></div>
+      </div>
+    </div>
+    <div class="loglist">
+      <h3>Verlauf heute</h3>
+      <div id="dayLog"></div>
+    </div>
+  </section>
+
+  <!-- WEEK VIEW -->
+  <section class="view" id="view-week">
+    <div class="hero">
+      <div class="count" id="weekCount">0</div>
+      <div class="label">diese Woche</div>
+      <div class="sub">
+        <div>Ø pro Tag<b id="weekAvg">0</b></div>
+        <div>Vorwoche<b id="lastWeekCount">0</b></div>
+      </div>
+    </div>
+    <div class="chart">
+      <h3>Mo – So</h3>
+      <div class="bars" id="weekBars"></div>
+    </div>
+  </section>
+
+  <!-- MONTH VIEW -->
+  <section class="view" id="view-month">
+    <div class="hero">
+      <div class="count" id="monthCount">0</div>
+      <div class="label" id="monthLabel">diesen Monat</div>
+      <div class="sub">
+        <div>Ø pro Tag<b id="monthAvg">0</b></div>
+        <div>Vormonat<b id="lastMonthCount">0</b></div>
+      </div>
+    </div>
+    <div class="chart">
+      <h3>Tagesübersicht</h3>
+      <div class="bars" id="monthBars"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS VIEW -->
+  <section class="view" id="view-settings">
+    <div class="loglist">
+      <div class="setting-row">
+        <div>
+          <div class="t">Erinnerungen</div>
+          <div class="d">Stündliche Benachrichtigung, solange Glimm geöffnet oder im Hintergrund-Tab ist</div>
+        </div>
+        <button class="switch" id="notifSwitch"></button>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="t">Lautlos</div>
+          <div class="d">Benachrichtigung ohne Ton, nur sanfte Vibration</div>
+        </div>
+        <button class="switch" id="silentSwitch"></button>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="t">Testmodus</div>
+          <div class="d">Benachrichtigung alle 20 Sekunden, zum Ausprobieren. Danach wieder ausschalten.</div>
+        </div>
+        <button class="switch" id="testSwitch"></button>
+      </div>
+    </div>
+    <p class="note">
+      Test läuft nur, solange Chrome/Glimm im Vorder- oder Hintergrund-Tab offen ist — nicht bei komplett geschlossener App. Das testet die Benachrichtigungen selbst, nicht das Verhalten bei voll geschlossener App.
+    </p>
+    <p class="note" style="margin-top:14px">
+      <b style="color:var(--text)">Wichtig für zuverlässigen Hintergrundbetrieb:</b> Samsung-Geräte stoppen Apps im Hintergrund standardmäßig zum Akkusparen. Unter Einstellungen → Apps → Glimm (bzw. Chrome) → Akku → „Nicht überwachte Apps" hinzufügen, sowie im Übersichtsbildschirm (zuletzt verwendete Apps) auf das App-Symbol tippen → „Sperren", damit Android sie nicht automatisch beendet.
+    </p>
+    <p class="note">
+      Alle Daten bleiben ausschließlich auf diesem Gerät gespeichert (lokal im Browser). Es gibt keine Cloud, kein Konto, keine Übertragung – auch im Flugmodus funktioniert Glimm vollständig.
+    </p>
+    <p class="note">
+      Hinweis: Auch als installierte App können Browser stündliche Hintergrund-Benachrichtigungen ohne eigenen Server nicht zu 100 % garantieren. Für absolut zuverlässige Erinnerungen auch bei komplett geschlossener App zusätzlich einen Wecker nutzen.
+    </p>
+    <button class="danger-btn" id="resetBtn">Alle Daten löschen</button>
+  </section>
+
+</main>
+
+<div class="tapzone">
+  <div class="inner">
+    <button id="undoBtn">↺</button>
+    <button id="logBtn">+ Eingetragen</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- Storage ---------------- */
+const STORE_KEY = 'glimm_entries_v1';
+const SETTINGS_KEY = 'glimm_settings_v1';
+
+function loadEntries(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveEntries(list){
+  localStorage.setItem(STORE_KEY, JSON.stringify(list));
+}
+function loadSettings(){
+  try{ return Object.assign({notif:false, silent:true, testNotif:false}, JSON.parse(localStorage.getItem(SETTINGS_KEY))); }
+  catch(e){ return {notif:false, silent:true, testNotif:false}; }
+}
+function saveSettings(s){
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
+
+let entries = loadEntries();
+let settings = loadSettings();
+
+/* ---------------- Helpers ---------------- */
+function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function isSameDay(a,b){ return startOfDay(a).getTime()===startOfDay(b).getTime(); }
+function startOfWeek(d){
+  const x = startOfDay(d);
+  const day = (x.getDay()+6)%7; // Monday=0
+  return addDays(x,-day);
+}
+function startOfMonth(d){ const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
+function fmtTime(ts){
+  const d=new Date(ts);
+  return d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+}
+function countBetween(from,to){
+  return entries.filter(e=>e.t>=from.getTime() && e.t<to.getTime()).length;
+}
+
+/* ---------------- Render: Day ---------------- */
+function renderDay(){
+  const today = startOfDay(new Date());
+  const tomorrow = addDays(today,1);
+  const todays = entries.filter(e=>e.t>=today.getTime() && e.t<tomorrow.getTime()).sort((a,b)=>b.t-a.t);
+
+  document.getElementById('dayCount').textContent = todays.length;
+  document.getElementById('lastTime').textContent = todays.length ? fmtTime(todays[0].t) : '–';
+
+  let sum7=0;
+  for(let i=0;i<7;i++){
+    const d0 = addDays(today,-i);
+    const d1 = addDays(d0,1);
+    sum7 += countBetween(d0,d1);
+  }
+  document.getElementById('avg7').textContent = (sum7/7).toFixed(1);
+
+  const logEl = document.getElementById('dayLog');
+  if(!todays.length){
+    logEl.innerHTML = '<div class="empty">Noch nichts eingetragen heute</div>';
+  } else {
+    logEl.innerHTML = todays.map((e,i)=>`
+      <div class="entry">
+        <div class="row"><span class="dot"></span>Zigarette ${todays.length-i}</div>
+        <div class="time">${fmtTime(e.t)}</div>
+      </div>`).join('');
+  }
+}
+
+/* ---------------- Render: Week ---------------- */
+function renderWeek(){
+  const wkStart = startOfWeek(new Date());
+  const lastWkStart = addDays(wkStart,-7);
+  const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+  let total=0;
+  let bars='';
+  const todayIdx = (new Date().getDay()+6)%7;
+  for(let i=0;i<7;i++){
+    const d0=addDays(wkStart,i);
+    const d1=addDays(d0,1);
+    const c=countBetween(d0,d1);
+    total+=c;
+  }
+  const max = Math.max(1, ...Array.from({length:7},(_,i)=>{
+    const d0=addDays(wkStart,i); return countBetween(d0,addDays(d0,1));
+  }));
+  for(let i=0;i<7;i++){
+    const d0=addDays(wkStart,i);
+    const c=countBetween(d0,addDays(d0,1));
+    const h = Math.max(3, Math.round((c/max)*100));
+    bars += `<div class="bar-col">
+      <div class="bar ${i===todayIdx?'today':''}" style="height:${h}px"></div>
+      <div class="bar-tick">${days[i]}</div>
+    </div>`;
+  }
+
+  document.getElementById('weekCount').textContent = total;
+  document.getElementById('weekAvg').textContent = (total/7).toFixed(1);
+  document.getElementById('lastWeekCount').textContent = countBetween(lastWkStart, wkStart);
+  document.getElementById('weekBars').innerHTML = bars;
+}
+
+/* ---------------- Render: Month ---------------- */
+function renderMonth(){
+  const now = new Date();
+  const mStart = startOfMonth(now);
+  const mEnd = startOfMonth(addDays(startOfMonth(now),32));
+  const daysInMonth = Math.round((mEnd-mStart)/86400000);
+  const lastMStart = startOfMonth(addDays(mStart,-1));
+
+  let total=0;
+  const counts=[];
+  for(let i=0;i<daysInMonth;i++){
+    const d0=addDays(mStart,i);
+    if(d0>=now && !isSameDay(d0,now)) { counts.push(null); continue; }
+    const c=countBetween(d0,addDays(d0,1));
+    counts.push(c);
+    total+=c;
+  }
+  const max = Math.max(1, ...counts.filter(c=>c!==null));
+  const todayDate = now.getDate();
+
+  let bars='';
+  counts.forEach((c,i)=>{
+    if(c===null) return;
+    const h = Math.max(3, Math.round((c/max)*100));
+    const isToday = (i+1)===todayDate;
+    bars += `<div class="bar-col">
+      <div class="bar ${isToday?'today':''}" style="height:${h}px"></div>
+      ${ (i+1)%5===0 || i===0 ? `<div class="bar-tick">${i+1}</div>` : '<div class="bar-tick"></div>' }
+    </div>`;
+  });
+
+  const elapsedDays = todayDate;
+  document.getElementById('monthCount').textContent = total;
+  document.getElementById('monthLabel').textContent = now.toLocaleDateString('de-DE',{month:'long'});
+  document.getElementById('monthAvg').textContent = (total/elapsedDays).toFixed(1);
+  document.getElementById('lastMonthCount').textContent = countBetween(lastMStart, mStart);
+  document.getElementById('monthBars').innerHTML = bars;
+}
+
+function renderAll(){ renderDay(); renderWeek(); renderMonth(); }
+
+/* ---------------- Tabs ---------------- */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    renderAll();
+  });
+});
+
+/* ---------------- Log / Undo ---------------- */
+document.getElementById('logBtn').addEventListener('click', ()=>{
+  entries.push({t: Date.now()});
+  saveEntries(entries);
+  renderAll();
+  if(navigator.vibrate) navigator.vibrate(30);
+});
+document.getElementById('undoBtn').addEventListener('click', ()=>{
+  if(!entries.length) return;
+  let latestIdx=0;
+  entries.forEach((e,i)=>{ if(e.t>entries[latestIdx].t) latestIdx=i; });
+  entries.splice(latestIdx,1);
+  saveEntries(entries);
+  renderAll();
+  if(navigator.vibrate) navigator.vibrate([10,30,10]);
+});
+
+/* ---------------- Settings ---------------- */
+function paintSwitches(){
+  document.getElementById('notifSwitch').classList.toggle('on', settings.notif);
+  document.getElementById('silentSwitch').classList.toggle('on', settings.silent);
+  document.getElementById('testSwitch').classList.toggle('on', settings.testNotif);
+}
+paintSwitches();
+
+document.getElementById('notifSwitch').addEventListener('click', async ()=>{
+  if(!settings.notif){
+    if('Notification' in window){
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted'){ return; }
+    }
+    settings.notif = true;
+  } else {
+    settings.notif = false;
+  }
+  saveSettings(settings);
+  paintSwitches();
+  scheduleReminder();
+  if(navigator.serviceWorker){
+    navigator.serviceWorker.ready.then(reg => registerBackgroundWakeup(reg));
+  }
+});
+document.getElementById('silentSwitch').addEventListener('click', ()=>{
+  settings.silent = !settings.silent;
+  saveSettings(settings);
+  paintSwitches();
+});
+
+document.getElementById('testSwitch').addEventListener('click', async ()=>{
+  if(!settings.testNotif){
+    if('Notification' in window){
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted'){ return; }
+    }
+    settings.testNotif = true;
+  } else {
+    settings.testNotif = false;
+  }
+  saveSettings(settings);
+  paintSwitches();
+  scheduleTestReminder();
+});
+
+let testTimer=null;
+let testCount=0;
+function scheduleTestReminder(){
+  if(testTimer) clearInterval(testTimer);
+  testCount=0;
+  if(!settings.testNotif) return;
+  testTimer = setInterval(()=>{
+    if(Notification.permission!=='granted') return;
+    testCount++;
+    new Notification('Glimm – Test', {
+      body: `Testbenachrichtigung #${testCount} — kommt alle 20 Sek. an`,
+      silent: settings.silent,
+      tag: 'glimm-test',
+      icon: './icon-192.png'
+    });
+    if(navigator.vibrate) navigator.vibrate(20);
+    if(testCount >= 15){
+      settings.testNotif = false;
+      saveSettings(settings);
+      paintSwitches();
+      clearInterval(testTimer);
+      new Notification('Glimm', {
+        body: 'Testmodus automatisch beendet (5 Min. erreicht)',
+        silent: true,
+        icon: './icon-192.png'
+      });
+    }
+  }, 20*1000);
+}
+scheduleTestReminder();
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Wirklich alle Einträge unwiderruflich löschen?')){
+    entries=[];
+    saveEntries(entries);
+    renderAll();
+  }
+});
+
+/* ---------------- Reminder loop (foreground / background tab) ---------------- */
+let reminderTimer=null;
+function scheduleReminder(){
+  if(reminderTimer) clearInterval(reminderTimer);
+  if(!settings.notif) return;
+  reminderTimer = setInterval(()=>{
+    const h = new Date().getHours();
+    if(h>=5 && h<=23 && Notification.permission==='granted'){
+      new Notification('Glimm', {
+        body: 'Zeit zum Eintragen — wie viele bisher?',
+        silent: settings.silent,
+        tag: 'glimm-reminder',
+        icon: './icon-192.png'
+      });
+    }
+  }, 60*60*1000); // every hour while the page/tab stays loaded
+}
+scheduleReminder();
+
+/* ---------------- Service worker (real offline caching) ---------------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', async ()=>{
+    try{
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      await registerBackgroundWakeup(reg);
+    }catch(e){}
+  });
+}
+
+/* Tries Periodic Background Sync (Chrome/Android, installed PWA only).
+   Silently does nothing if unsupported — the in-app hourly check and
+   the phone alarm remain the reliable fallbacks either way. */
+async function registerBackgroundWakeup(reg){
+  if(!settings.notif) return;
+  if('periodicSync' in reg){
+    try{
+      const status = await navigator.permissions.query({name:'periodic-background-sync'});
+      if(status.state === 'granted'){
+        await reg.periodicSync.register('glimm-hourly-reminder', {
+          minInterval: 60*60*1000
+        });
+      }
+    }catch(e){}
+  }
+}
+
+/* ---------------- Install button (beforeinstallprompt) ---------------- */
+let deferredPrompt = null;
+const installBar = document.getElementById('installBar');
+const installBtn = document.getElementById('installBtn');
+const installClose = document.getElementById('installClose');
+
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  if(localStorage.getItem('glimm_install_dismissed') !== '1'){
+    installBar.classList.add('show');
+  }
+});
+
+installBtn.addEventListener('click', async ()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBar.classList.remove('show');
+});
+
+installClose.addEventListener('click', ()=>{
+  installBar.classList.remove('show');
+  localStorage.setItem('glimm_install_dismissed','1');
+});
+
+window.addEventListener('appinstalled', ()=>{
+  installBar.classList.remove('show');
+});
+
+/* ---------------- Init ---------------- */
+renderAll();
+</script>
+</body>
+</html>
